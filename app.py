@@ -1,77 +1,37 @@
-
-import numpy as np
-import altair as alt
-import pandas as pd
 import streamlit as st
 from datetime import time, datetime
 
-st.header('st.write')
+login_flag = False
 
-# Example 1
+while (login_flag==False):
+    st.header('Welcome! Please log in or register to continue.')
+    if st.button('Log In'):
+        username = st.text_input('Username')
+        password = st.text_input('Password', type='password')
+        if st.button('Submit'):
+            # Here you would typically check the credentials against a database
+            if username == "admin" and password == "password":
+                st.success('Login successful!')
+                login_flag = True
+            else:
+                st.error('Invalid username or password. Please try again.')
 
-st.write('Hello, *World!* :sunglasses:')
-
-# Example 2
-
-st.write(1234)
-
-# Example 3
-
-df = pd.DataFrame({
-     'first column': [1, 2, 3, 4],
-     'second column': [10, 20, 30, 40]
-     })
-st.write(df)
-
-# Example 4
-
-st.write('Below is a DataFrame:', df, 'Above is a dataframe.')
-
-# Example 5
-
-df2 = pd.DataFrame(
-     np.random.randn(200, 3),
-     columns=['a', 'b', 'c'])
-c = alt.Chart(df2).mark_circle().encode(
-     x='a', y='b', size='c', color='c', tooltip=['a', 'b', 'c'])
-st.write(c)
-
-
-#day 8
-
-st.header('st.slider')
-
-# Example 1
-
-st.subheader('Slider')
-
-age = st.slider('How old are you?', 0, 130, 25)
-st.write("I'm ", age, 'years old')
-
-# Example 2
-
-st.subheader('Range slider')
-
-values = st.slider(
-     'Select a range of values',
-     0.0, 100.0, (25.0, 75.0))
-st.write('Values:', values)
-
-# Example 3
-
-st.subheader('Range time slider')
-
-appointment = st.slider(
-     "Schedule your appointment:",
-     value=(time(11, 30), time(12, 45)))
-st.write("You're scheduled for:", appointment)
-
-# Example 4
-
-st.subheader('Datetime slider')
-
-start_time = st.slider(
-     "When do you start?",
-     value=datetime(2020, 1, 1, 9, 30),
-     format="MM/DD/YY - hh:mm")
-st.write("Start time:", start_time)
+    elif st.button('Register'):
+        new_username = st.text_input('New Username')
+        new_password = st.text_input('New Password', type='password')
+        if st.button('Register'):
+            # save the new user to a database
+            st.success(f'Registration successful for {new_username}!')
+            username = new_username
+            login_flag = True
+else:
+    st.header('Welcome back, ' + username + '!')
+    st.write('You are now logged in.')
+    
+    # Here you can add more functionality for the logged-in user
+    st.write('Current time:', datetime.now().strftime("%H:%M:%S"))
+    st.write('Current date:', datetime.now().strftime("%Y-%m-%d"))
+    
+    if st.button('Log Out'):
+        login_flag = False
+        st.success('You have been logged out. Please log in again.')    
