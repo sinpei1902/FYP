@@ -1,113 +1,72 @@
-import psycopg2
-import psycopg2.extras
 import streamlit as st
+from supabase import create_client
 
-# Get DB connection string from Streamlit secrets
-DB_URL = st.secrets["postgres"]["url"]
+# Initialize Supabase client
+url = st.secrets["supabase"]["url"]
+key = st.secrets["supabase"]["anon_key"]
+supabase = create_client(url, key)
 
-def get_conn():
-    return psycopg2.connect(DB_URL)
+# -------------------
+# User management
+# -------------------
 
-def init_db():
-    conn = get_conn()
-    cur = conn.cursor()
-
-    # Users table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT
-        )
-    ''')
-
-    # Exams table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS exams (
-            id SERIAL PRIMARY KEY,
-            username TEXT,
-            course TEXT,
-            exam_date TIMESTAMP,
-            start_date TIMESTAMP,
-            FOREIGN KEY (username) REFERENCES users (username)
-        )
-    ''')
-
-    # Tasks table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER,
-            task_name TEXT,
-            hours INTEGER,
-            due_date DATE,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-    ''')
-
-    # Friends table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS friends (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER,
-            friend_id INTEGER,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (friend_id) REFERENCES users (id)
-        )
-    ''')
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-# --- User management ---
 def check_username_exists(username):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM users WHERE username = %s", (username,))
-    result = cur.fetchone()
-    cur.close()
-    conn.close()
-    return bool(result)
-
+    result = supabase.table("users").select("id").eq("username", username).execute()
+    return len(result.data) > 0
 
 def create_user(username, password):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return True
-
+    result = supabase.table("users").insert({"username": username, "password": password}).execute()
+    return len(result.data) > 0
 
 def validate_user(username, entered_password):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, entered_password))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
-    return True if user else False
+    result = supabase.table("users").select("*").eq("username", username).eq("password", entered_password).execute()
+    return len(result.data) > 0
 
+# -------------------
+# Exam management
+# -------------------
 
-# --- Exam management ---
 def add_exam_to_db(username, course, exam_date, start_date):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO exams (username, course, exam_date, start_date) VALUES (%s, %s, %s, %s)",
-                (username, course, exam_date, start_date))
-    conn.commit()
-    cur.close()
-    conn.close()
-
+    supabase.table("exams").insert({
+        "username": username,
+        "course": course,
+        "exam_date": exam_date,
+        "start_date": start_date
+    }).execute()
 
 def get_exams(username):
-    conn = get_conn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)  # like sqlite3.Row
-    cur.execute("SELECT * FROM exams WHERE username=%s", (username,))
-    exams = cur.fetchall()
-    cur.close()
-    conn.close()
-    return exams
+    result = supabase.table("exams").select("*").eq("username", username).execute()
+    return result.data
+
+def delete_exam(exam_id):
+    supabase.table("exams").delete().eq("id", exam_id).execute()
+
+# -------------------
+# Tasks management
+# -------------------
+
+def add_task(user_id, task_name, hours, due_date):
+    supabase.table("tasks").insert({
+        "user_id": user_id,
+        "task_name": task_name,
+        "hours": hours,
+        "due_date": due_date
+    }).execute()
+
+def get_tasks(user_id):
+    result = supabase.table("tasks").select("*").eq("user_id", user_id).execute()
+    return result.data
+
+# -------------------
+# Friends management
+# -------------------
+
+def add_friend(user_id, friend_id):
+    supabase.table("friends").insert({
+        "user_id": user_id,
+        "friend_id": friend_id
+    }).execute()
+
+def get_friends(user_id):
+    result = supabase.table("friends").select("*").eq("user_id", user_id).execute()
+    return result.data

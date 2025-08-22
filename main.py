@@ -52,7 +52,7 @@ class MultiApp:
             friends.app()   
 
 # Run the app
-db.init_db()  # Initialize the database
+# Database initialised on supabase.com
 if __name__ == '__main__':
     app = MultiApp()
     app.run()
