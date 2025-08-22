@@ -1,15 +1,23 @@
-import sqlite3
+import psycopg2
+import streamlit as st
 
-DB_NAME = "planner.db"
+# Get the DB URL from Streamlit secrets
+DB_URL = st.secrets["postgres"]["url"]
 
+# Utility function to get connection
+def get_connection():
+    conn = psycopg2.connect(DB_URL)
+    return conn
+
+# Initialize database tables
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
 
     # Users table
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             username TEXT UNIQUE,
             password TEXT
         )
@@ -18,102 +26,104 @@ def init_db():
     # Exams table
     c.execute('''
         CREATE TABLE IF NOT EXISTS exams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
+            id SERIAL PRIMARY KEY,
+            username TEXT REFERENCES users(username),
             course TEXT,
-            exam_date DATETIME,
-            start_date DATETIME,
-            FOREIGN KEY (username) REFERENCES users (username)
+            exam_date TIMESTAMP,
+            start_date TIMESTAMP
         )
     ''')
-
 
     # Tasks table
     c.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
             task_name TEXT,
             hours INTEGER,
-            due_date TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id)
+            due_date TIMESTAMP
         )
     ''')
 
     # Friends table
     c.execute('''
         CREATE TABLE IF NOT EXISTS friends (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            friend_id INTEGER,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (friend_id) REFERENCES users (id)
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            friend_id INTEGER REFERENCES users(id)
         )
     ''')
 
     conn.commit()
+    c.close()
     conn.close()
 
-#username and login management functions
+# ---------------------------
+# User management functions
+# ---------------------------
 def check_username_exists(username):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    
-    c.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+    c.execute("SELECT 1 FROM users WHERE username = %s", (username,))
     result = c.fetchone()
-    
+    c.close()
     conn.close()
-    
-    if result:
-        return True  # Username exists
-    else:
-        return False  # Username does not exist
+    return True if result else False
 
 def create_user(username, password):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    c.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
     conn.commit()
+    c.close()
     conn.close()
-    return True # Return True if user created successfully, else False
+    return True
 
 def validate_user(username, entered_password):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, entered_password))
+    c.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, entered_password))
     user = c.fetchone()
+    c.close()
     conn.close()
     return True if user else False
 
-#task management functions
+# ---------------------------
+# Exam management functions
+# ---------------------------
 def add_exam_to_db(username, course, exam_date, start_date):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("INSERT INTO exams (username, course, exam_date, start_date) VALUES (?, ?, ?, ?)",
-              (username, course, exam_date, start_date))
+    c.execute(
+        "INSERT INTO exams (username, course, exam_date, start_date) VALUES (%s, %s, %s, %s)",
+        (username, course, exam_date, start_date)
+    )
     conn.commit()
+    c.close()
     conn.close()
 
 def get_exams(username):
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row  # makes rows behave like dictionaries
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT * FROM exams WHERE username=?", (username,))
+    c.execute("SELECT * FROM exams WHERE username=%s", (username,))
     exams = c.fetchall()
+    c.close()
     conn.close()
     return exams
 
 def delete_exam(exam_id):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("DELETE FROM exams WHERE id=?", (exam_id,))
+    c.execute("DELETE FROM exams WHERE id=%s", (exam_id,))
     conn.commit()
+    c.close()
     conn.close()
 
 def troubleshoot():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM exams")
     tables = c.fetchall()
+    c.close()
     conn.close()
     return tables
