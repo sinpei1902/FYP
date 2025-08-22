@@ -1,21 +1,19 @@
 import psycopg2
+import psycopg2.extras
 import streamlit as st
 
-# Get the DB URL from Streamlit secrets
+# Get DB connection string from Streamlit secrets
 DB_URL = st.secrets["postgres"]["url"]
 
-# Utility function to get connection
-def get_connection():
-    conn = psycopg2.connect(DB_URL)
-    return conn
+def get_conn():
+    return psycopg2.connect(DB_URL)
 
-# Initialize database tables
 def init_db():
-    conn = get_connection()
-    c = conn.cursor()
+    conn = get_conn()
+    cur = conn.cursor()
 
     # Users table
-    c.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username TEXT UNIQUE,
@@ -24,106 +22,92 @@ def init_db():
     ''')
 
     # Exams table
-    c.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS exams (
             id SERIAL PRIMARY KEY,
-            username TEXT REFERENCES users(username),
+            username TEXT,
             course TEXT,
             exam_date TIMESTAMP,
-            start_date TIMESTAMP
+            start_date TIMESTAMP,
+            FOREIGN KEY (username) REFERENCES users (username)
         )
     ''')
 
     # Tasks table
-    c.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
+            user_id INTEGER,
             task_name TEXT,
             hours INTEGER,
-            due_date TIMESTAMP
+            due_date DATE,
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
 
     # Friends table
-    c.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS friends (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
-            friend_id INTEGER REFERENCES users(id)
+            user_id INTEGER,
+            friend_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (friend_id) REFERENCES users (id)
         )
     ''')
 
     conn.commit()
-    c.close()
+    cur.close()
     conn.close()
 
-# ---------------------------
-# User management functions
-# ---------------------------
+
+# --- User management ---
 def check_username_exists(username):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT 1 FROM users WHERE username = %s", (username,))
-    result = c.fetchone()
-    c.close()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM users WHERE username = %s", (username,))
+    result = cur.fetchone()
+    cur.close()
     conn.close()
-    return True if result else False
+    return bool(result)
+
 
 def create_user(username, password):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
     conn.commit()
-    c.close()
+    cur.close()
     conn.close()
     return True
 
+
 def validate_user(username, entered_password):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, entered_password))
-    user = c.fetchone()
-    c.close()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, entered_password))
+    user = cur.fetchone()
+    cur.close()
     conn.close()
     return True if user else False
 
-# ---------------------------
-# Exam management functions
-# ---------------------------
+
+# --- Exam management ---
 def add_exam_to_db(username, course, exam_date, start_date):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        "INSERT INTO exams (username, course, exam_date, start_date) VALUES (%s, %s, %s, %s)",
-        (username, course, exam_date, start_date)
-    )
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO exams (username, course, exam_date, start_date) VALUES (%s, %s, %s, %s)",
+                (username, course, exam_date, start_date))
     conn.commit()
-    c.close()
+    cur.close()
     conn.close()
+
 
 def get_exams(username):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT * FROM exams WHERE username=%s", (username,))
-    exams = c.fetchall()
-    c.close()
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)  # like sqlite3.Row
+    cur.execute("SELECT * FROM exams WHERE username=%s", (username,))
+    exams = cur.fetchall()
+    cur.close()
     conn.close()
     return exams
-
-def delete_exam(exam_id):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("DELETE FROM exams WHERE id=%s", (exam_id,))
-    conn.commit()
-    c.close()
-    conn.close()
-
-def troubleshoot():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT * FROM exams")
-    tables = c.fetchall()
-    c.close()
-    conn.close()
-    return tables

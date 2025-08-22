@@ -1,3 +1,4 @@
 streamlit
 streamlit-option-menu
 psycopg2-binary
+st-supabase-connection==2.1.0
