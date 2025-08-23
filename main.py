@@ -48,6 +48,11 @@ class MultiApp:
                 tasks.app()  
             else:
                 tasks.preview()
+        if app == 'Generate Planner':
+            if "username" in st.session_state and st.session_state["username"]:
+                planner.app()  
+            else:
+                planner.preview()
         if app == 'Friends':
             friends.app()   
 
