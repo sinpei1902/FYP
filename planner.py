@@ -97,23 +97,26 @@ def generate_study_plan(username):
 
     for exam in exams:
         exam_date = pd.to_datetime(exam["exam_date"]).date()
-        sessions_needed = int(exam.get("sessions_needed", 10))
+        sessions_needed = math.ceil(exam['hours_needed']/hours_per_session)
 
         # Start scheduling backwards from exam_date - 1
-        current_day = exam_date - timedelta(days=1)
+        current_day = exam_date
 
         for i in range(sessions_needed, 0, -1):  # e.g. Session 10 → Session 1
+            current_day -= timedelta(days=1)
             if current_day < today:
                 break  # don’t schedule in the past
 
-            if current_day not in plan:
+            if current_day not in plan: #initialise if not exists
                 plan[current_day] = []
+            while len(plan[current_day]) >= (sessions_per_day-1): #if daily limit reached
+                current_day -= timedelta(days=1)
+                if current_day < today:
+                    break
+                if current_day not in plan:
+                    plan[current_day] = []
 
             # Append session string
-            plan[current_day].append(f"{exam['course']} - Session {i}")
-
-            # Move backwards if daily limit reached
-            if len(plan[current_day]) >= sessions_per_day:
-                current_day -= timedelta(days=1)
+            plan[current_day].append(f"{exam['course']} - {i}")
 
     return plan
