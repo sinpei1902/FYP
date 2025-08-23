@@ -109,7 +109,7 @@ def generate_study_plan(username):
 
             if current_day not in plan: #initialise if not exists
                 plan[current_day] = []
-            while len(plan[current_day]) >= (sessions_per_day-1): #if daily limit reached
+            while len(plan[current_day]) >= (sessions_per_day): #if daily limit reached
                 current_day -= timedelta(days=1)
                 if current_day < today:
                     break
