@@ -14,7 +14,9 @@ def app():
 
     if choice == "Add Task":
         add_choice = st.selectbox("Add Exam or Add Task",["Add Exam","Add Task"])
-        if add_choice == "Add Task": add_task()
+        if add_choice == "Add Task": 
+            st.write("Work in Progress")
+            #add_task()
         elif add_choice == "Add Exam": 
             add_exam()
             view_exams()
