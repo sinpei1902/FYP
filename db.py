@@ -1,5 +1,6 @@
 import streamlit as st
 import math
+import pandas as pd
 from supabase import create_client
 
 url = st.secrets["supabase"]["url"]
@@ -67,27 +68,45 @@ def get_tasks(user_id):
     return result.data
 
 # Study plan management
-def create_study_plan(username, plan):
-    # plan = {date: [sessions...]}
-    for d, sessions in plan.items():
-        for session in sessions:
-            supabase.table("study_plans").insert({
-                "username": username,
-                "date": d.isoformat(),
-                 # if isinstance(d, str) else d.isoformat(),
-                "session_text": session
-            }).execute()
+def add_session_to_plan(username, date, session_text, is_exam, exam_or_task_id):
+    supabase.table("study_plans").insert({
+        "username": username,
+        "date": date.isoformat(),
+        "session_text": session_text,
+        "is_exam": is_exam,
+        "exam_or_task_id": exam_or_task_id
+    }).execute()
 
-def get_study_plan(username):
-    result = supabase.table("study_plans").select("*").eq("username", username).execute()
+def get_date_range(username):
+    result = supabase.table("study_plans").select("date").eq("username", username).execute()
     rows = result.data
-    plan = {}
-    for row in rows:
-        d = row["date"]
-        if d not in plan:
-            plan[d] = []
-        plan[d].append(row["session_text"])
-    return plan
+
+    if not rows:  # no rows returned
+        return None, None
+
+    dates = [pd.to_datetime(row["date"]).date() for row in rows if row.get("date")]
+    #if not dates:  # all rows missing 'date' or empty
+    #    return None, None
+
+    return min(dates), max(dates)
+
+def get_sessions(username, date):
+    result = supabase.table("study_plans").select("session_text").eq("username",username).eq("date",date.isoformat()).execute()
+    # extract session_text from each row
+    sessions = [row["session_text"] for row in result.data] if result.data else []
+    return sessions #returns a list
+
+def get_sessions_by_id(username, is_exam, id):
+    result = supabase.table("study_plans").select("session_text","date").eq("username",username).eq("is_exam",is_exam).eq("exam_or_task_id",id).execute()
+    sessions = []
+    for row in result.data:
+        session_date = pd.to_datetime(row["date"]).date()  # convert to date object
+        sessions.append({
+            "session_text": row["session_text"],
+            "date": session_date
+        })
+    sessions.sort(key=lambda s: s["date"]) # Sort by date
+    return sessions
 
 def require_study_plan_update(username):
     supabase.table("user_pref").update({"require_update": True}).eq("username", username).execute()
@@ -95,15 +114,18 @@ def require_study_plan_update(username):
 def clear_study_plan(username):
     supabase.table("study_plans").delete().eq("username", username).execute()
 
-def update_study_plan(username, plan):
-    clear_study_plan(username)
-    create_study_plan(username, plan)
+def set_as_updated(username):
     supabase.table("user_pref").update({"require_update": False}).eq("username", username).execute()
-    supabase.table("user_pref").update({"require_update": False}).eq("username", username).execute()
-    
+
 def check_study_plan_exists(username):
-    results = supabase.table("study_plans").select("*").eq("username", username).execute()
-    return len(results.data) > 0
+    result = (
+        supabase.table("study_plans")
+        .select("id")   # only need 1 column
+        .eq("username", username)
+        .limit(1)       # only need to know if one exists
+        .execute()
+    )
+    return bool(result.data)
 
 # Friends management
 def add_friend(user_id, friend_id):
