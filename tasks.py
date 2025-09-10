@@ -22,11 +22,17 @@ def app():
             view_exams()
     elif choice == "View Tasks":
         st.subheader('**View Tasks**')
-        view_exams()
-        #view_tasks()
+        with st.container(border=True):
+            view_exams()
+        with st.container(border=True):
+            st.write("WIP")
+            #view_tasks()
     elif choice == "Delete Task":
-        delete_exams()
-        #delete_tasks()
+        with st.container(border=True):
+            delete_exams()
+        with st.container(border=True):
+            st.write("WIP")
+            #delete_tasks()
 
 def add_exam():
     st.subheader('**Add Exam**')
@@ -110,7 +116,7 @@ def delete_exams():
                 st.write(f"Exam Date: {exam['exam_date']}")
                 col1, col2 = st.columns([4, 1])
                 with col2:
-                    submit = st.form_submit_button("Delete")
+                    submit = st.form_submit_button("🗑️")
             if submit:
                 db.delete_exam(exam['id'])
                 db.require_study_plan_update(st.session_state["username"])

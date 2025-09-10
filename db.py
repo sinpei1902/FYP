@@ -128,12 +128,48 @@ def check_study_plan_exists(username):
     return bool(result.data)
 
 # Friends management
-def add_friend(user_id, friend_id):
-    supabase.table("friends").insert({
-        "user_id": user_id,
-        "friend_id": friend_id
+def check_if_friends(user_id, friend_id):
+    result = supabase.table("friends").select("id").eq("username", user_id).eq("friend", friend_id).execute()
+    return len(result.data) > 0
+
+def check_if_requested(user_id, friend_id):
+    result = supabase.table("friend_requests").select("id").eq("requestor", user_id).eq("requestee", friend_id).execute()
+    return len(result.data) > 0
+
+def req_friend(user_id, friend_id):
+    supabase.table("friend_requests").insert({
+        "requestor": user_id,
+        "requestee": friend_id
     }).execute()
 
+def add_friend(user_id, friend_id):
+    supabase.table("friends").insert({
+        "username": user_id,
+        "friend": friend_id
+    }).execute()
+    supabase.table("friends").insert({
+        "username": friend_id,
+        "friend": user_id
+    }).execute()
+
+def get_requests_received(user_id):
+    result = supabase.table("friend_requests").select("*").eq("requestee", user_id).execute()
+    return result.data
+
+def accept_request(user_id, friend_id):
+    #remove request from friend_requests | friend_id is the requestor
+    supabase.table("friend_requests").delete().eq("requestor",friend_id).eq("requestee",user_id).execute()
+    #add friend
+    add_friend(user_id, friend_id)
+
+def cancel_request(user_id, friend_id):
+    #remove request from friend_requests | user_id is the requestor
+    supabase.table("friend_requests").delete().eq("requestee",friend_id).eq("requestor",user_id).execute()    
+
+def get_requests_sent(user_id):
+    result = supabase.table("friend_requests").select("*").eq("requestor", user_id).execute()
+    return result.data
+
 def get_friends(user_id):
-    result = supabase.table("friends").select("*").eq("user_id", user_id).execute()
+    result = supabase.table("friends").select("*").eq("username", user_id).execute()
     return result.data

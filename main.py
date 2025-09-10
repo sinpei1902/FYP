@@ -54,7 +54,10 @@ class MultiApp:
             else:
                 planner.preview()
         if app == 'Friends':
-            friends.app()   
+            if "username" in st.session_state and st.session_state["username"]:
+                friends.app()  
+            else:
+                friends.preview()
 
 # Run the app
 # Database initialised on supabase.com
