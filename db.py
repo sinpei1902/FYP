@@ -92,18 +92,26 @@ def get_date_range(username):
     return min(dates), max(dates)
 
 def get_sessions(username, date):
-    result = supabase.table("study_plans").select("session_text").eq("username",username).eq("date",date.isoformat()).execute()
+    result = supabase.table("study_plans").select("session_text","completed").eq("username",username).eq("date",date.isoformat()).execute()
     # extract session_text from each row
-    sessions = [row["session_text"] for row in result.data] if result.data else []
+    sessions=[]
+    for row in result.data:
+        session_text = row["session_text"] 
+        if row["completed"]:
+            session_text = "☑️ "+ session_text
+        sessions += [session_text]
     return sessions #returns a list
 
 def get_sessions_by_id(username, is_exam, id):
-    result = supabase.table("study_plans").select("session_text","date").eq("username",username).eq("is_exam",is_exam).eq("exam_or_task_id",id).execute()
+    result = supabase.table("study_plans").select("session_text","date","completed").eq("username",username).eq("is_exam",is_exam).eq("exam_or_task_id",id).execute()
     sessions = []
     for row in result.data:
+        session_text = row["session_text"] 
+        if row["completed"]:
+            session_text = session_text + " ✅"
         session_date = pd.to_datetime(row["date"]).date()  # convert to date object
         sessions.append({
-            "session_text": row["session_text"],
+            "session_text": session_text,
             "date": session_date
         })
     sessions.sort(key=lambda s: s["date"]) # Sort by date
@@ -197,7 +205,8 @@ def reduce_hours_needed(username,session_id,hours_to_reduce):
         exam_id = result.data[0]["exam_or_task_id"]
         hours_needed = get_hours_needed(username,exam_id)
         updated_hours_needed = hours_needed - hours_to_reduce
-        supabase.table("exams").update({"hours_needed":updated_hours_needed}).eq("id",exam_id).execute()
+        supabase.table("exams").update({"hours_needed":
+        updated_hours_needed}).eq("id",exam_id).execute()
     # WIP: is_task
 
 def get_score(username):

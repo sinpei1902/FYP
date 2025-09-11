@@ -62,7 +62,7 @@ def display_view2(username):
                 if exam.get('description'):
                     st.write(f"Description: {exam['description']}")
                 st.write(f"Exam Date: {exam['exam_date']}")
-                st.write(f"Estimated Study Hours Needed: {hours_needed} hours "
+                st.write(f"Estimated Remaining Study Hours Needed: {hours_needed} hours "
                          f"({hours_per_session}hrs x {num_sessions} sessions)")
 
                 # Display each session
