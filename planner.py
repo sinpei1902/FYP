@@ -141,6 +141,7 @@ def generate_study_plan(username):
     sessions_per_day = int(user_pref["sessions_per_day"])
 
     exams = db.get_exams(username)  # list of dicts: {course, exam_date, sessions_needed}
+
     today = date.today()
     counter = {}
 
@@ -224,6 +225,12 @@ def generate_study_plan(username, study_window_days=20):
     sessions_per_day = int(user_pref["sessions_per_day"])
 
     exams = db.get_exams(username)
+
+    #check if any tasks: 
+    if len(exams)==0:
+        st.warning("Please add an exam or task first.")
+        st.stop() 
+
     today = date.today()
     schedule = {}
 

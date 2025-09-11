@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import db, home, account, tasks, planner, friends
+import db, home, account, tasks, planner, quick_task, friends
 
 st.set_page_config(page_title='AI Study Planner', page_icon='🖼️', layout='wide')
 
@@ -20,8 +20,8 @@ class MultiApp:
         with st.sidebar:
             app = option_menu(
                 menu_title = 'AI Study Planner',
-                options = ['Home',account_label,'Tasks','Generate Planner','Friends'],
-                icons = ['house','person','list-task','calendar-check','people'], #boostrap icons
+                options = ['Home',account_label,'Tasks','Generate Planner','Complete a Task','Friends'],
+                icons = ['house','person','list-task','calendar-check','ui-checks','people'], #boostrap icons
                 menu_icon = 'robot',
                 default_index = 1,
                 styles = {
@@ -53,6 +53,11 @@ class MultiApp:
                 planner.app()  
             else:
                 planner.preview()
+        if app == 'Complete a Task':
+            if "username" in st.session_state and st.session_state["username"]:
+                quick_task.app()  
+            else:
+                quick_task.preview()
         if app == 'Friends':
             if "username" in st.session_state and st.session_state["username"]:
                 friends.app()  

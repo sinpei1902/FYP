@@ -15,6 +15,7 @@ def check_username_exists(username):
 def create_user(username, password):
     result = supabase.table("users").insert({"username": username, "password": password}).execute()
     supabase.table("user_pref").insert({"username":username}).execute()
+    supabase.table("score").insert({"username":username}).execute()
     return len(result.data) > 0
 
 def validate_user(username, entered_password):
@@ -170,6 +171,32 @@ def get_requests_sent(user_id):
     result = supabase.table("friend_requests").select("*").eq("requestor", user_id).execute()
     return result.data
 
-def get_friends(user_id):
+def get_friends(user_id): # returns list of friends username
     result = supabase.table("friends").select("*").eq("username", user_id).execute()
-    return result.data
+    friends = [row["friend"] for row in result.data]
+    return friends
+
+# Score Management
+def get_session_queue(username): 
+    result = supabase.table("study_plans").select("id","date").eq("username",username).eq("completed",False).execute()
+    sorted_rows = sorted(result.data, key=lambda x: x["date"])
+    session_ids = [row["id"] for row in sorted_rows]
+    return session_ids
+
+def get_by_session_id(session_id): 
+    result = supabase.table("study_plans").select("*").eq("id",session_id).execute()
+    return result.data[0]
+
+def mark_complete(session_id):
+    supabase.table("study_plans").update({"completed": True}).eq("id", session_id).execute()
+
+def get_score(username):
+    result = supabase.table("score").select("score").eq("username",username).execute()
+    score = result.data[0]["score"]
+    return score
+
+def score_increase(username, increment):
+    new_score = get_score(username) + increment
+    supabase.table("score").update({"score": new_score}).eq("username", username).execute()
+
+

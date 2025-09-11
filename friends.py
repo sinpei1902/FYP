@@ -14,20 +14,43 @@ def app():
 
 def leaderboard():
     friends = db.get_friends(st.session_state["username"])
-    #leaderboard WIP
-    #leaderboard = friends + session_state user
-    if friends:
-        i=1
-        for friend in friends:
-            with st.container(border=True):
-                col1, col2, col3 = st.columns([1,16,3])
-                with col1:
-                    st.subheader(str(i))
-                with col2:
-                    st.subheader(friend["friend"])
-            i+=1
-    else:
-        st.write("Add friend to compete!")
+    friends.append(st.session_state["username"]) #add user to leaderboard
+
+    leaderboard_dict = []
+    for user in friends:
+        score = db.get_score(user)
+        if user == st.session_state["username"]: 
+            user = ""+user+" (you)" #change how user is displayed on leaderboard
+        leaderboard_dict.append({"username": user, "score": score})
+
+    #sort from highest to lowest score
+    leaderboard_dict = sorted(leaderboard_dict, key=lambda x: x["score"], reverse=True)
+    st.header("Leaderboard 🏆")
+    rank = 0
+    prev_score = None
+    for i, entry in enumerate(leaderboard_dict, start=1):
+        if entry["score"] != prev_score:
+            rank = i
+        prev_score = entry["score"]
+
+        with st.container(border=True):
+            col1, col2, col3 = st.columns([1,16,3])
+            with col1:
+                if rank==1:
+                    st.header("🥇")
+                elif rank==2:
+                    st.header("🥈")
+                elif rank==3:
+                    st.header("🥉")
+                else:
+                    st.subheader(str(rank))
+            with col2:
+                st.subheader(entry['username'])
+            with col3:
+                st.subheader(str(entry['score'])+"🎖️")
+
+    if len(friends)==1:
+        st.subheader("Add friend to compete!")
 
 def add_friends():
     #Send friend request
