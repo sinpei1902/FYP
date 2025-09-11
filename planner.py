@@ -234,6 +234,7 @@ def generate_study_plan(username, study_window_days=20):
     today = date.today()
     schedule = {}
 
+    #sort based on exam dates (earliest to latest)
     exams = sorted(exams, key=lambda x: pd.to_datetime(x["exam_date"]).date())
 
     for exam in exams:

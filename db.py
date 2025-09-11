@@ -190,6 +190,16 @@ def get_by_session_id(session_id):
 def mark_complete(session_id):
     supabase.table("study_plans").update({"completed": True}).eq("id", session_id).execute()
 
+def reduce_hours_needed(username,session_id,hours_to_reduce):
+    result = supabase.table("study_plans").select("is_exam","exam_or_task_id").eq("id",session_id).execute()
+    is_exam = result.data[0]["is_exam"]
+    if is_exam:
+        exam_id = result.data[0]["exam_or_task_id"]
+        hours_needed = get_hours_needed(username,exam_id)
+        updated_hours_needed = hours_needed - hours_to_reduce
+        supabase.table("exams").update({"hours_needed":updated_hours_needed}).eq("id",exam_id).execute()
+    # WIP: is_task
+
 def get_score(username):
     result = supabase.table("score").select("score").eq("username",username).execute()
     score = result.data[0]["score"]
