@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import db, home, account, tasks, planner, quick_task, friends
+import db, home, account, items, planner, quick_item, friends
 
 st.set_page_config(page_title='AI Study Planner', page_icon='🖼️', layout='wide')
 
@@ -20,7 +20,9 @@ class MultiApp:
         with st.sidebar:
             app = option_menu(
                 menu_title = 'AI Study Planner',
-                options = ['Home',account_label,'Tasks','Generate Planner','Complete a Task','Friends'],
+                #options = ['Home',account_label,'Study Items','Generate Planner','Chatbot: Finetune Planner' ,'Complete an Item','Friends'],
+                #icons = ['house','person','list-task','calendar-check','chat-dots','ui-checks','people'], #boostrap icons
+                options = ['Home',account_label,'Study Items','Generate Planner','Complete an Item','Friends'],
                 icons = ['house','person','list-task','calendar-check','ui-checks','people'], #boostrap icons
                 menu_icon = 'robot',
                 default_index = 1,
@@ -43,21 +45,26 @@ class MultiApp:
                 account.loggedIn()  
             else:
                 account.logIn() 
-        if app == 'Tasks':
+        if app == 'Study Items':
             if "username" in st.session_state and st.session_state["username"]:
-                tasks.app()  
+                items.app()  
             else:
-                tasks.preview()
+                items.preview()
         if app == 'Generate Planner':
             if "username" in st.session_state and st.session_state["username"]:
                 planner.app()  
             else:
                 planner.preview()
-        if app == 'Complete a Task':
+        #if app == 'Chatbot: Finetune Planner':
+        #    if "username" in st.session_state and st.session_state["username"]:
+        #        chat.app()  
+        #    else:
+        #        chat.preview()
+        if app == 'Complete an Item':
             if "username" in st.session_state and st.session_state["username"]:
-                quick_task.app()  
+                quick_item.app()  
             else:
-                quick_task.preview()
+                quick_item.preview()
         if app == 'Friends':
             if "username" in st.session_state and st.session_state["username"]:
                 friends.app()  

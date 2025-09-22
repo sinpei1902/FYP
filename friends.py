@@ -5,12 +5,17 @@ def preview():
     st.write("Add your friends here!")
 
 def app():
-    choice = st.selectbox("Select a task to manage:", ["Leaderboard", "Add Friends"])
+    tab1,tab2 = st.tabs(["🏆 Leaderboard", "🤝 Add Friends"])
+    with tab1: 
+        leaderboard()
+    with tab2: 
+        add_friends()
 
+'''
     if choice == "Leaderboard":
         leaderboard()
     elif choice == "Add Friends":
-        add_friends()
+        add_friends()'''
 
 def leaderboard():
     friends = db.get_friends(st.session_state["username"])
@@ -25,7 +30,6 @@ def leaderboard():
 
     #sort from highest to lowest score
     leaderboard_dict = sorted(leaderboard_dict, key=lambda x: x["score"], reverse=True)
-    st.header("Leaderboard 🏆")
     rank = 0
     prev_score = None
     for i, entry in enumerate(leaderboard_dict, start=1):
@@ -54,8 +58,8 @@ def leaderboard():
 
 def add_friends():
     #Send friend request
-    st.subheader("Request a Friend")
-    with st.form("Request a Friend"):
+    st.subheader("Send a Friend Request")
+    with st.form("Send a Friend Request"):
         requestee = st.text_input("Input friend's username: ")
         col1, col2 = st.columns([10,2])
         with col2:
@@ -84,7 +88,7 @@ def add_friends():
                         st.success("Request Sent")
 
     #Accept friend reuqest 
-    st.subheader("Requests Received:")
+    st.subheader("Friend Requests Received:")
     requests = db.get_requests_received(st.session_state["username"])
     n = str(len(requests))
     with st.expander("Pending: "+n,expanded=True):
@@ -107,10 +111,10 @@ def add_friends():
                     i+=1
 
         else: 
-            st.write("No requests received and pending.")
+            st.write("No pending friend requests received.")
 
     #Pending friend reuqests sent 
-    st.subheader("Requests Sent:")
+    st.subheader("Friend Requests Sent:")
     requests = db.get_requests_sent(st.session_state["username"])
     n = str(len(requests))
     with st.expander("Pending: "+n,expanded=True):
@@ -129,6 +133,6 @@ def add_friends():
                     db.cancel_request(st.session_state["username"],request["requestee"])
                     st.rerun()
         else: 
-            st.write("No requests sent and pending.")
+            st.write("No pending friend requests sent.")
 
 

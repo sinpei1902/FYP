@@ -4,7 +4,7 @@ import db
 from datetime import date, timedelta 
 
 def preview():
-    st.write("Complete tasks to earn points and compete with friends!")
+    st.write("Complete study items to earn points and compete with friends!")
 
 def app():
     username = st.session_state["username"]

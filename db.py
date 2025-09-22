@@ -48,7 +48,7 @@ def get_exams(username):
 def delete_exam(exam_id):
     supabase.table("exams").delete().eq("id", exam_id).execute()
 
-def get_hours_needed(username, exam_id):
+def get_hours_needed_exam(username, exam_id):
     result = supabase.table("exams").select("hours_needed").eq("username", username).eq("id", exam_id).execute()
     hours_per_session = get_user_pref(username)['preferred_hours_per_session']
     if result.data:
@@ -56,17 +56,28 @@ def get_hours_needed(username, exam_id):
     return None
 
 # Tasks management
-def add_task(user_id, task_name, hours, due_date):
+def add_task_to_db(username, task, due_date, description, hours_needed):
     supabase.table("tasks").insert({
-        "user_id": user_id,
-        "task_name": task_name,
-        "hours": hours,
-        "due_date": due_date
+        "username": username,
+        "task": task,
+        "due_date": due_date.isoformat(),
+        "description": description,
+        "hours_needed": hours_needed
     }).execute()
 
-def get_tasks(user_id):
-    result = supabase.table("tasks").select("*").eq("user_id", user_id).execute()
+def get_tasks(username):
+    result = supabase.table("tasks").select("*").eq("username", username).execute()
     return result.data
+
+def delete_task(task_id):
+    supabase.table("tasks").delete().eq("id", task_id).execute()
+
+def get_hours_needed_task(username, task_id):
+    result = supabase.table("tasks").select("hours_needed").eq("username", username).eq("id", task_id).execute()
+    hours_per_session = get_user_pref(username)['preferred_hours_per_session']
+    if result.data:
+        return math.ceil(result.data[0]['hours_needed']/hours_per_session)*hours_per_session
+    return None
 
 # Study plan management
 def add_session_to_plan(username, date, session_text, is_exam, exam_or_task_id):
@@ -100,6 +111,7 @@ def get_sessions(username, date):
         if row["completed"]:
             session_text = "☑️ "+ session_text
         sessions += [session_text]
+    sessions.sort() # Sort alphabetically
     return sessions #returns a list
 
 def get_sessions_by_id(username, is_exam, id):
@@ -114,6 +126,7 @@ def get_sessions_by_id(username, is_exam, id):
             "session_text": session_text,
             "date": session_date
         })
+    sessions.sort(key=lambda s: s["session_text"]) # Sort by session text
     sessions.sort(key=lambda s: s["date"]) # Sort by date
     return sessions
 
@@ -203,11 +216,14 @@ def reduce_hours_needed(username,session_id,hours_to_reduce):
     is_exam = result.data[0]["is_exam"]
     if is_exam:
         exam_id = result.data[0]["exam_or_task_id"]
-        hours_needed = get_hours_needed(username,exam_id)
+        hours_needed = get_hours_needed_exam(username,exam_id)
         updated_hours_needed = hours_needed - hours_to_reduce
-        supabase.table("exams").update({"hours_needed":
-        updated_hours_needed}).eq("id",exam_id).execute()
-    # WIP: is_task
+        supabase.table("exams").update({"hours_needed": updated_hours_needed}).eq("id",exam_id).execute()
+    else: 
+        task_id = result.data[0]["exam_or_task_id"]
+        hours_needed = get_hours_needed_task(username,task_id)
+        updated_hours_needed = hours_needed - hours_to_reduce
+        supabase.table("tasks").update({"hours_needed": updated_hours_needed}).eq("id",task_id).execute()
 
 def get_score(username):
     result = supabase.table("score").select("score").eq("username",username).execute()
