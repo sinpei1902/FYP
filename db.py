@@ -79,6 +79,42 @@ def get_hours_needed_task(username, task_id):
         return math.ceil(result.data[0]['hours_needed']/hours_per_session)*hours_per_session
     return None
 
+#Block out sessions management
+def add_blockout_to_db(username, date, reason, hours_needed):
+    supabase.table("blockouts").insert({
+        "username": username,
+        "blockout_date": date.isoformat(),
+        "blockout_reason": reason,
+        "hours_needed": hours_needed
+    }).execute()
+
+def get_all_blockouts(username):
+    result = supabase.table("blockouts").select("*").eq("username", username).execute()
+    return result.data
+
+def get_blockouts(username,date):
+    result = supabase.table("blockouts").select("*").eq("username", username).eq("blockout_date", date.isoformat()).execute()
+    blockouts=[]
+    for row in result.data:
+        blockout_reason = row["blockout_reason"] 
+        blockout_time_needed = row["hours_needed"]
+        blockout_text = ""+f"{blockout_reason} - {blockout_time_needed} hours"
+        #if row["completed"]:
+        #    session_text = "☑️ "+ session_text
+        blockouts += [blockout_text]
+    blockouts.sort() # Sort alphabetically
+    return blockouts #returns a list
+
+def delete_blockout(blockout_id):
+    supabase.table("blockouts").delete().eq("id", blockout_id).execute()
+
+'''def get_hours_needed_blockout(username, blockout_id):
+    result = supabase.table("blockouts").select("hours_needed").eq("username", username).eq("id", blockout_id).execute()
+    hours_per_session = get_user_pref(username)['preferred_hours_per_session']
+    if result.data:
+        return math.ceil(result.data[0]['hours_needed']/hours_per_session)*hours_per_session
+    return None
+'''
 # Study plan management
 def add_session_to_plan(username, date, session_text, is_exam, exam_or_task_id):
     supabase.table("study_plans").insert({
@@ -90,15 +126,24 @@ def add_session_to_plan(username, date, session_text, is_exam, exam_or_task_id):
     }).execute()
 
 def get_date_range(username):
-    result = supabase.table("study_plans").select("date").eq("username", username).execute()
+    result = supabase.table("study_plans").select("date").eq("username", username).eq("completed",False).execute()
     rows = result.data
-
-    if not rows:  # no rows returned
+    result2 = supabase.table("blockouts").select("blockout_date").eq("username", username).execute()
+    rows2 = result2.data 
+    if not rows and not rows2:  # no rows returned
         return None, None
-
-    dates = [pd.to_datetime(row["date"]).date() for row in rows if row.get("date")]
+    dates = []
+    for row in rows:
+        row["date"] = pd.to_datetime(row["date"]).date() 
+        dates += [row["date"]]
+    for row in rows2:
+        row["blockout_date"] = pd.to_datetime(row["blockout_date"]).date() 
+        dates += [row["blockout_date"]]
+    #dates = [pd.to_datetime(row["date"]).date() for row in rows if row.get("date")]
+    #dates.append([pd.to_datetime(row["blockout_date"]).date() for row in rows2 if row.get("blockout_date")])
     #if not dates:  # all rows missing 'date' or empty
     #    return None, None
+    
 
     return min(dates), max(dates)
 
