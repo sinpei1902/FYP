@@ -3,13 +3,16 @@ import db
 import math
 import pandas as pd
 from datetime import date, timedelta, datetime
+#import account
 
 def preview():
     st.write("You can generate a study plan based on your tasks and preferences here.")
     st.write("Please log in to access the full planner features.")
 
 def app():
-    with st.expander("**Block out some dates**"):
+    #with st.expander("**⚙️Manage User Preferences**"):
+    #    account.set_user_pref()
+    with st.expander("**🚫Block out some dates**"):
         st.write("If you have any commitments or unavailable dates, you can block them out here. This will prevent study sessions from being scheduled on those dates.")
         col1, col2 = st.columns(2)
         with col1:
@@ -28,7 +31,10 @@ def app():
             for b in sorted(blockouts, key=lambda x: pd.to_datetime(x['blockout_date']).date()):
                 col1, col2, col3 = st.columns([3,5,1])
                 with col1:
-                    st.write(b['blockout_date'])
+                    if b['blockout_date']<date.today().isoformat():
+                        st.write(str(b['blockout_date'])+" (past)")
+                    else:
+                        st.write(b['blockout_date'])
                 with col2:
                     reason = b.get('blockout_reason', 'No reason provided')
                     hours = b.get('hours_needed', 0)
@@ -64,7 +70,7 @@ def app():
                     st.warning("Your study plan needs to be updated due to changes in your preferences or study items.")
             with col2:
                 if st.button("Regenerate Study Plan", key="regen1"):
-                    generate_study_plan(st.session_state["username"])
+                    generate_study_plan(st.session_state["username"],db.get_user_pref(st.session_state["username"])['study_window'])
                     db.set_as_updated(st.session_state["username"])
                     st.success("Study plan updated!")
                     st.rerun()
@@ -73,7 +79,7 @@ def app():
             with col1:
                 display_overdue(st.session_state["username"],start)
                 if st.button("Regenerate Study Plan", key="regen2"):
-                    generate_study_plan(st.session_state["username"])
+                    generate_study_plan(st.session_state["username"],db.get_user_pref(st.session_state["username"])['study_window'])
                     db.set_as_updated(st.session_state["username"])
                     st.success("Study plan updated!")
                     st.rerun()
@@ -85,7 +91,7 @@ def app():
         st.write("No existing study plan found. Generate a new study plan:")
         if st.button("Generate Study Plan"):
             
-            generate_study_plan(st.session_state["username"])
+            generate_study_plan(st.session_state["username"],db.get_user_pref(st.session_state["username"])['study_window'])
             st.success("Study plan generated!")
             display_plan(st.session_state["username"])
             return
@@ -95,7 +101,7 @@ def display_overdue(username,start):
     all_days = pd.date_range(start, today - timedelta(days=1), freq="D")
     with st.container(border=True):
         st.subheader("⚠️ Overdue Study Items ⚠️")
-        st.write(f"Your study plan contains items scheduled before today ({today}). Please complete the sessions or regenerate a new study plan.")
+        st.write(f"Your study plan contains items scheduled before today ({today}). Please complete the sessions, edit study items, or regenerate a new study plan.")
         col1, col2 = st.columns([1,3])
         with col1:
             st.subheader("Assigned Date")
@@ -442,22 +448,31 @@ def allocate(exam_or_task, session_pointer, number_of_sessions, number_of_days, 
         n_per_day = min(math.ceil(number_of_sessions/number_of_days),sessions_per_day) #limit max sessions per day
         while(session_pointer>end_pointer):
             if day_pointer<today:
-                break
-            allocated=0
-            sessions_to_allocate = min(n_per_day, sessions_per_day-schedule.get(day_pointer, 0))
-            while (allocated<sessions_to_allocate and session_pointer>end_pointer):
-                #add to db
+                #add to "today"
                 db.add_session_to_plan(username, day_pointer, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
-                schedule[day_pointer] = schedule.get(day_pointer, 0) + 1
+                #schedule[day_pointer2] = schedule.get(day_pointer2, 0) + 1
                 session_pointer-=1
-                allocated+=1
-            day_pointer -= timedelta(days=1)
+                #break
+            else:
+                allocated=0
+                sessions_to_allocate = min(n_per_day, sessions_per_day-schedule.get(day_pointer, 0))
+                while (allocated<sessions_to_allocate and session_pointer>end_pointer):
+                    #add to db
+                    db.add_session_to_plan(username, day_pointer, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
+                    schedule[day_pointer] = schedule.get(day_pointer, 0) + 1
+                    session_pointer-=1
+                    allocated+=1
+                day_pointer -= timedelta(days=1)
     else:
         day_interval = math.floor(day_interval)
         while(session_pointer>end_pointer):
             if day_pointer<today:
-                break
-            if schedule.get(day_pointer, 0) < sessions_per_day:
+                #add to "today"
+                db.add_session_to_plan(username, day_pointer, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
+                #schedule[day_pointer2] = schedule.get(day_pointer2, 0) + 1
+                session_pointer-=1
+                #break
+            elif schedule.get(day_pointer, 0) < sessions_per_day:
                 #add to db
                 db.add_session_to_plan(username, day_pointer, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
                 schedule[day_pointer] = schedule.get(day_pointer, 0) + 1
@@ -472,5 +487,7 @@ def allocate(exam_or_task, session_pointer, number_of_sessions, number_of_days, 
                         session_pointer-=1
                         break
                     day_pointer2 -= timedelta(days=1)
+                    
+
             day_pointer -= timedelta(days=day_interval)
     return session_pointer,day_pointer,schedule

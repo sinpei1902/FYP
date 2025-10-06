@@ -27,9 +27,10 @@ def get_user_pref(username):
     result = supabase.table("user_pref").select("*").eq("username", username).execute()
     return result.data[0]
 
-def update_user_pref(username, preferred_hours_per_session,sessions_per_day):
+def update_user_pref(username, preferred_hours_per_session,sessions_per_day,study_window):
     supabase.table("user_pref").update({"preferred_hours_per_session": preferred_hours_per_session}).eq("username", username).execute()
     supabase.table("user_pref").update({"sessions_per_day": sessions_per_day}).eq("username", username).execute()
+    supabase.table("user_pref").update({"study_window": study_window}).eq("username", username).execute()
 
 # Exam management
 def add_exam_to_db(username, course, exam_date, description, hours_needed):
