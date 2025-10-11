@@ -5,8 +5,14 @@ from datetime import date, timedelta
 
 def preview():
     st.write("Complete study items to earn points and compete with friends!")
+    st.header("Preview")
+    guide()
 
 def app():
+    col1,col2=st.columns([9,1])
+    with col2:
+        with st.popover("Guide", icon="💡"):
+            guide()
     username = st.session_state["username"]
     if (db.check_study_plan_exists(username)==False):
         st.warning("No study plan generated yet. Generate a study plan first.")
@@ -19,6 +25,14 @@ def app():
         #st.write(session_id)
         display_session(session_id)
         i+=1
+
+def guide():
+    st.subheader("Complete an item to earn points and compete with friends")
+    with st.container(border=True):
+        st.write("Your earliest 3 study sessions will be displayed here")
+        st.write("Simply click on \"Done\" when you are done with a study session")
+        st.image("images/complete an item.png")
+        st.write("View your score and compete with friends in the \"Friends\" page")
 
 def display_session(id):
     session = db.get_by_session_id(id)

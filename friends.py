@@ -3,19 +3,32 @@ import db
 
 def preview():
     st.write("Add your friends here!")
+    st.header("Preview")
+    guide()
 
 def app():
+    col1,col2=st.columns([9,1])
+    with col2:
+        with st.popover("Guide", icon="💡"):
+            guide()
     tab1,tab2 = st.tabs(["🏆 Leaderboard", "🤝 Add Friends"])
     with tab1: 
         leaderboard()
     with tab2: 
         add_friends()
 
-'''
-    if choice == "Leaderboard":
-        leaderboard()
-    elif choice == "Add Friends":
-        add_friends()'''
+def guide():
+    st.subheader("1. Leaderboard")
+    with st.container(border=True):
+        st.write("View your friends' and your scores")
+        st.image("images/friends-leaderboard.png")
+        st.write("Earn more points under \"Complete an Item\" page")
+    
+    st.subheader("2. Add Friends")
+    with st.container(border=True):
+        st.write("Send a friend request by inputting your friend's username")
+        st.write("Manage friend requests received and sent")
+        st.image("images/friends-add.png")
 
 def leaderboard():
     friends = db.get_friends(st.session_state["username"])
@@ -107,7 +120,7 @@ def add_friends():
                             db.cancel_request(request["requestor"],st.session_state["username"])
                             st.rerun()
                     with col3:
-                        st.write(f"{request["requestor"]}")
+                        st.write(f"{request['requestor']}")
                     i+=1
 
         else: 
@@ -126,7 +139,7 @@ def add_friends():
                     col1, col2 = st.columns([1,18])
                     i+=1
                     with col2:
-                        st.write(f"{request["requestee"]}")
+                        st.write(f"{request['requestee']}")
                     with col1:
                         submit = st.form_submit_button("🚫")
                 if submit:

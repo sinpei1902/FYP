@@ -8,7 +8,14 @@ def preview():
     st.write("This is a preview of the study items management feature.")
     st.write("You can add, view, and delete items here.")
     st.write("Please log in to manage your study items.")
+    st.header("Preview")
+    guide()
+
 def app():
+    col1,col2=st.columns([9,1])
+    with col2:
+        with st.popover("Guide", icon="💡"):
+            guide()
     #st.session_state["username"]
     tab1,tab2,tab3 = st.tabs(["View Items", "Add Item","Delete Item"])
 
@@ -38,6 +45,28 @@ def app():
         with st.container(border=True):
             delete_tasks()
             
+def guide():
+    st.subheader("1. Under the \"View Items\" tab, view all exams and tasks with their respective exam dates or due dates")
+    with st.container(border=True):
+        st.write("View your items here and expand to view the details")
+        st.image("images/items-view.png")
+    with st.container(border=True):
+        st.write("Expanded items")
+        st.image("images/items-view expanded.png")
+
+    st.subheader("2. Under the \"Add item\" tab, add exams or tasks")
+    with st.container(border=True):
+        st.write("Add exam")
+        st.image("images/items-add exam.png")
+    with st.container(border=True):
+        st.write("Add task: option to add a recurring task")
+        st.image("images/items-add task.png")
+
+    st.subheader("3. Under the \"Delete item\" tab, you can easily delete exams or tasks")
+    with st.container(border=True):
+        st.write("Delete an item by clicking the button")
+        st.image("images/items-delete.png")
+
 #EXAMS
 def add_exam():
     #st.subheader('**Add Exam**')
@@ -90,7 +119,11 @@ def view_exams():
                     st.write(f"Description: {exam['description']}")
                 st.write(f"Exam Date: {exam['exam_date']}")
                 number_of_sessions = math.ceil(exam['hours_needed']/hours_per_session)
-                st.write(f"Estimated Number of Remaining Hours Needed: {hours_needed} hours ({hours_per_session}hrs x {number_of_sessions} session{"s" if number_of_sessions>1 else ""})")
+                plural = 's' if number_of_sessions > 1 else ''
+                st.write(
+                    f"Estimated Number of Remaining Hours Needed: {hours_needed} hours "
+                    f"({hours_per_session}hrs x {number_of_sessions} session{plural})"
+                )    
     else:
         st.write("No exams found. Please add an exam first.")
 
@@ -219,10 +252,11 @@ def view_tasks():
                     st.write(f"Description: {task.get('description')}")
                 st.write(f"Due Date: {task['due_date']}")
                 number_of_sessions = math.ceil(task['hours_needed']/hours_per_session)
-                st.write(f"Estimated Number of Remaining Hours Needed: {hours_needed} hours ({hours_per_session}hrs x {number_of_sessions} session{"s" if number_of_sessions>1 else ""})")
-    else:
-        st.write("No tasks found. Please add a task first.")
-
+                plural = 's' if number_of_sessions > 1 else ''
+                st.write(
+                    f"Estimated Number of Remaining Hours Needed: {hours_needed} hours "
+                    f"({hours_per_session}hrs x {number_of_sessions} session{plural})"
+                )
 def delete_tasks():
     st.subheader('**Tasks Added:**')
     tasks = db.get_tasks(st.session_state["username"])

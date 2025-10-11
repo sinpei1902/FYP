@@ -8,59 +8,59 @@ from datetime import date, timedelta, datetime
 def preview():
     st.write("You can generate a study plan based on your tasks and preferences here.")
     st.write("Please log in to access the full planner features.")
+    st.header("Preview")
+    guide()
 
 def app():
+    col1,col2=st.columns([9,1])
+    with col2:
+        with st.popover("Guide", icon="💡"):
+            guide()
     #with st.expander("**⚙️Manage User Preferences**"):
     #    account.set_user_pref()
-    with st.expander("**🚫Block out some dates**"):
-        st.write("If you have any commitments or unavailable dates, you can block them out here. This will prevent study sessions from being scheduled on those dates.")
-        col1, col2 = st.columns(2)
-        with col1:
-            blockout_date = st.date_input("Select date to block out", min_value=date.today())
-        with col2:
-            blockout_reason = st.text_input("Reason for blockout")
-        hours_needed = st.number_input("Hours unavailable", min_value=0.5, step=0.5)
-        if st.button("Add Blockout"):
-            db.add_blockout_to_db(st.session_state["username"], blockout_date, blockout_reason, hours_needed)
-            db.require_study_plan_update(st.session_state["username"])
-            st.rerun()
-        # Display existing blockouts
-        blockouts = db.get_all_blockouts(st.session_state["username"])
-        if blockouts:
-            st.subheader("Existing Blockouts")
-            for b in sorted(blockouts, key=lambda x: pd.to_datetime(x['blockout_date']).date()):
-                col1, col2, col3 = st.columns([3,5,1])
-                with col1:
-                    if b['blockout_date']<date.today().isoformat():
-                        st.write(str(b['blockout_date'])+" (past)")
-                    else:
-                        st.write(b['blockout_date'])
-                with col2:
-                    reason = b.get('blockout_reason', 'No reason provided')
-                    hours = b.get('hours_needed', 0)
-                    if hours>0:
-                        reason += f" ({hours} hrs)"
-                    st.write(reason)
-                with col3:
-                    if st.button("🗑️", key=f"del_{b['id']}"):
-                        db.delete_blockout(b['id'])
-                        st.rerun()
-        else:
-            st.write("No blockouts added yet.")
+
+    with col1:
+        with st.expander("**🚫Block out some dates**"):
+            st.write("If you have any commitments or unavailable dates, you can block them out here. This will prevent study sessions from being scheduled on those dates.")
+            col1, col2 = st.columns(2)
+            with col1:
+                blockout_date = st.date_input("Select date to block out", min_value=date.today())
+            with col2:
+                blockout_reason = st.text_input("Reason for blockout")
+            hours_needed = st.number_input("Hours unavailable", min_value=0.5, step=0.5)
+            if st.button("Add Blockout"):
+                db.add_blockout_to_db(st.session_state["username"], blockout_date, blockout_reason, hours_needed)
+                db.require_study_plan_update(st.session_state["username"])
+                st.rerun()
+            # Display existing blockouts
+            blockouts = db.get_all_blockouts(st.session_state["username"])
+            if blockouts:
+                st.subheader("Existing Blockouts")
+                for b in sorted(blockouts, key=lambda x: pd.to_datetime(x['blockout_date']).date()):
+                    col1, col2, col3 = st.columns([3,5,1])
+                    with col1:
+                        if b['blockout_date']<date.today().isoformat():
+                            st.write(str(b['blockout_date'])+" (past)")
+                        else:
+                            st.write(b['blockout_date'])
+                    with col2:
+                        reason = b.get('blockout_reason', 'No reason provided')
+                        hours = b.get('hours_needed', 0)
+                        if hours>0:
+                            reason += f" ({hours} hrs)"
+                        st.write(reason)
+                    with col3:
+                        if st.button("🗑️", key=f"del_{b['id']}"):
+                            db.delete_blockout(b['id'])
+                            st.rerun()
+            else:
+                st.write("No blockouts added yet.")
     if db.check_study_plan_exists(st.session_state["username"]):
         start, end = db.get_date_range(st.session_state["username"])
         today = date.today()
         
         if db.get_user_pref(st.session_state["username"])['require_update']:
-            col1, col2 = st.columns([10,1])
-            '''with col1:
-                st.warning("Your study plan needs to be updated due to changes in your preferences or study items.")
-            with col2:
-                if st.button("Regenerate Study Plan", key="regen2"):
-                    generate_study_plan(st.session_state["username"])
-                    db.set_as_updated(st.session_state["username"])
-                    st.success("Study plan updated!")
-                    st.rerun()'''
+            col1, col2 = st.columns([9,1])
             if  start < today:
                 with col1:
                     st.warning("Your study plan needs to be updated due to changes in your preferences or study items.")
@@ -75,7 +75,7 @@ def app():
                     st.success("Study plan updated!")
                     st.rerun()
         elif start < today:
-            col1, col2 = st.columns([10,1])
+            col1, col2 = st.columns([9,1])
             with col1:
                 display_overdue(st.session_state["username"],start)
                 if st.button("Regenerate Study Plan", key="regen2"):
@@ -95,6 +95,37 @@ def app():
             st.success("Study plan generated!")
             display_plan(st.session_state["username"])
             return
+        
+def guide():
+    st.subheader("1. Not free to study on certain days? Use blockout feature to block out such days:")
+    with st.container(border=True):
+        st.write("Click to use blockout feature")
+        st.image("images/generate-blockout.png")
+    with st.container(border=True):
+        st.write("Click on \"Add Blockout\" after keying in information on your blockout")
+        st.image("images/generate-add blockout.png")
+    with st.container(border=True):
+        st.write("Easily delete blockouts")
+        st.image("images/generate-del blockout.png")
+
+    st.subheader("2. First time generating? Simply click on \"Generate Study Plan\"")
+    with st.container(border=True):
+        st.write("Make sure that you have added at least one study item in the \"Study Items\" page")
+        st.image("images/generate-generate.png")
+
+
+    st.subheader("3. Overdue items")
+    with st.container(border=True):
+        st.write("Overdue items will be brought to your attention")
+        st.image("images/generate-overdue.png")
+    
+    st.subheader("4. View your study plan")
+    with st.container(border=True):
+        st.write("Available in calendar format")
+        st.image("images/generate-calendar.png")
+    with st.container(border=True):
+        st.write("Also available to view by study items")
+        st.image("images/generate-study items.png")
 
 def display_overdue(username,start):
     today = date.today()
@@ -218,7 +249,7 @@ def display_calendar(username):
         if sessions:
             #sessions = sorted(sessions, key=lambda x: x['session_text'])
             session_str = "\n".join(sessions)
-            session_str = f"{len(sessions)} {"sessions" if len(sessions)>1 else "session"}:\n\n{session_str}"
+            session_str = f"({len(sessions)} {'sessions' if len(sessions) > 1 else 'session'}:\n\n{session_str})"
         else:
             session_str = ""  # no sessions for this day
         if blockouts:
@@ -254,6 +285,13 @@ def display_calendar(username):
 def generate_study_plan(username, study_window=20):
     if db.check_study_plan_exists(username):
         db.clear_study_plan(username)
+    
+    exams = db.get_exams(username)
+    tasks = db.get_tasks(username)
+    #check if any tasks: 
+    if len(exams)==0 and len(tasks)==0:
+        st.warning("Please add an exam or task first.")
+        st.stop() 
 
     today = date.today()
     earliest_due_date = today + timedelta(days=study_window)  # anything earlier would require a shorter study window
@@ -266,15 +304,7 @@ def generate_study_plan(username, study_window=20):
     
     user_pref = db.get_user_pref(username)
     hours_per_session = float(user_pref["preferred_hours_per_session"])
-    sessions_per_day = int(user_pref["sessions_per_day"])
-
-    exams = db.get_exams(username)
-    tasks = db.get_tasks(username)
-
-    #check if any tasks: 
-    if len(exams)==0 and len(tasks)==0:
-        st.warning("Please add an exam or task first.")
-        st.stop() 
+    #sessions_per_day = int(user_pref["sessions_per_day"])
 
     schedule = {} # date -> number of sessions already scheduled
 
@@ -290,8 +320,88 @@ def generate_study_plan(username, study_window=20):
     #allocate study sessions for exams first
     #sort based on exam dates (earliest to latest)
     exams = sorted(exams, key=lambda x: pd.to_datetime(x["exam_date"]).date())
+    temp_list = [] #list of dictionaries: dict:{"sessions_needed":, "date":, "w1":, "w2":, "w3":,"n":,"day_pointer":}
+        
+    #allocate window 1 for all exams first
+    for i in range(len(exams)):
+        exam = exams[i]
+        sessions_needed =  math.ceil(exam["hours_needed"] / hours_per_session)
+        exam_date = pd.to_datetime(exam["exam_date"]).date()
+        if exam_date < earliest_due_date:
+            w1,w2,w3 = compute_study_windows((exam_date - today).days)
+        else: #default
+            w1,w2,w3 = window_1,window_2,window_3
 
-    for exam in exams: 
+        day_pointer = exam_date - timedelta(days=1) #start from day before exam
+        #allocate from the back
+        n = sessions_needed #pointer (start from last session)
+        n_1,n_2,n_3 = compute_sessions_distribution((exam_date - today).days,sessions_needed)
+        number_of_days = w1
+        n,day_pointer,schedule = allocate(exam, n, n_1, number_of_days, day_pointer, schedule)
+        temp_dict={"sessions_needed": sessions_needed,
+                "date": exam_date,
+                "w1": w1,
+                "w2": w2,
+                "w3": w3,
+                "n": n,
+                "day_pointer": day_pointer}
+        temp_list.append(temp_dict)
+    
+    #allocate window 2 for all exams 
+    for i in range(len(exams)):
+        exam = exams[i]
+
+        sessions_needed = temp_list[i]["sessions_needed"]
+        exam_date = temp_list[i]["date"]
+        w1 = temp_list[i]["w1"]
+        w2 = temp_list[i]["w2"]
+        n = temp_list[i]["n"]
+        day_pointer = temp_list[i]["day_pointer"]
+
+        end_w2 = max(today,exam_date - timedelta(days=w1+1))
+        start_w2 = max(today,exam_date - timedelta(days=w2))
+
+        n_1,n_2,n_3 = compute_sessions_distribution((exam_date - today).days,sessions_needed)
+        number_of_days = w2 - w1
+        if (day_pointer>end_w2):
+            day_pointer = end_w2
+        elif (day_pointer<start_w2):
+            number_of_days = 1 #at least 1
+        elif (day_pointer<end_w2): # day_pointer before end_w2, after or on start_w2
+            number_of_days = (day_pointer - start_w2).days + 1
+        n,day_pointer,schedule = allocate(exam, n, n_2 - n_1, number_of_days, day_pointer, schedule)
+
+        #update temp_list
+        temp_list[i]["n"] = n
+        temp_list[i]["day_pointer"] = day_pointer 
+
+
+    #allocate window 3 for all exams 
+    for i in range(len(exams)):
+        exam = exams[i]
+
+        sessions_needed = temp_list[i]["sessions_needed"]
+        exam_date = temp_list[i]["date"]
+        w2 = temp_list[i]["w2"]
+        w3 = temp_list[i]["w3"]
+        n = temp_list[i]["n"]
+        day_pointer = temp_list[i]["day_pointer"]
+
+        end_w3 = max(today,exam_date - timedelta(days=w2+1))
+        start_w3 = max(today,exam_date - timedelta(days=w3))
+
+        number_of_days = w3-w2
+        if (day_pointer>end_w3):
+            day_pointer = end_w3
+        elif (day_pointer<start_w3):
+            number_of_days = 1 #at least 1
+        elif (day_pointer<end_w3): # day_pointer before end_w3, after or on start_w3
+            number_of_days = (day_pointer - start_w3).days + 1
+        n,day_pointer,schedule = allocate(exam, n, n, number_of_days, day_pointer, schedule)
+
+
+
+    '''for exam in exams:
         sessions_needed = math.ceil(exam["hours_needed"] / hours_per_session)
         
         exam_date = pd.to_datetime(exam["exam_date"]).date()
@@ -334,7 +444,7 @@ def generate_study_plan(username, study_window=20):
             number_of_days = 1 #at least 1
         elif (day_pointer<end_w3): # day_pointer before end_w3, after or on start_w3
             number_of_days = (day_pointer - start_w3).days + 1
-        n,day_pointer,schedule = allocate(exam, n, n, number_of_days, day_pointer, schedule)
+        n,day_pointer,schedule = allocate(exam, n, n, number_of_days, day_pointer, schedule)'''
     
     #allocate sessions for tasks
     tasks = sorted(tasks, key=lambda x: pd.to_datetime(x["due_date"]).date())
@@ -389,22 +499,29 @@ def generate_study_plan(username, study_window=20):
 
 
 def compute_study_windows(window):
-    # window 1: (default 4 days ~30% of workload ~7.5%/day)
+    # window 1: (default 5 days ~35% of workload ~7%/day)
     #window_1 = math.ceil(window * 4 / 20)
-    # window 2: (defaults 14 days ~50% of workload ~5%/day)
+    # window 2: (defaults 15 days ~50% of workload ~5%/day)
     #window_2 = math.ceil(window * 14 / 20)
     # ensure window_1 + window_2 < window
-    # window 3: (default 20 days ~20% of workload ~3.3%/day)
-    #window_3 = window
+    # window 3: (default 20 days ~20% of workload ~4%/day)
+
+    # window 1: (default 5 days ~45% of workload ~9%/day)
+    #window_1 = math.ceil(window * 5 / 20)
+    # window 2: (defaults 15 days ~40% of workload ~4%/day)
+    #window_2 = math.ceil(window * 15 / 20)
+    # ensure window_1 + window_2 < window
+    # window 3: (default 20 days ~15% of workload ~3%/day)
+
     if window<5:
         window_1 = window
         window_2 = window
     else:
-        window_1 = math.ceil(window * 4 / 20)
+        window_1 = math.ceil(window * 5 / 20)
         if window<10:
             window_2 = window
         else:
-            window_2 = math.ceil(window * 14 / 20)
+            window_2 = math.ceil(window * 15 / 20)
     window_3 = window
     return window_1, window_2, window_3
 
@@ -414,13 +531,66 @@ def compute_sessions_distribution(window,sessions_needed):
         n_2 = sessions_needed
         n_3 = sessions_needed
     else:
-        n_1 = math.ceil(sessions_needed*0.3)
+        n_1 = math.ceil(sessions_needed*0.45)
         if window<10:
             n_2 = sessions_needed
         else:
-            n_2 = math.ceil(sessions_needed*0.5)
+            n_2 = math.ceil(sessions_needed*0.85)
         n_3 = sessions_needed
     return n_1,n_2,n_3
+'''
+def compute_study_windows(window):
+    # window 1: (default 5 days ~35% of workload ~7%/day)
+    #window_1 = math.ceil(window * 4 / 20)
+    # window 2: (defaults 15 days ~50% of workload ~5%/day)
+    #window_2 = math.ceil(window * 14 / 20)
+    # ensure window_1 + window_2 < window
+    # window 3: (default 20 days ~20% of workload ~4%/day)
+    #window_3 = window]
+    if window <= 3: # For very short windows, same window for all phases
+        window_1 = window
+        window_2 = window
+        window_3 = window
+    elif window <= 5: # For short windows,
+        window_1 = max(2, math.ceil(window * 0.4))
+        window_2 = window
+        window_3 = window
+    elif window < 10:
+        window_1 = max(3, math.ceil(window * 0.25))
+        window_2 = window
+        window_3 = window
+    else:
+        # Default distribution for longer windows
+        window_1 = math.ceil(window * 0.25)  # 25% for intensive phase
+        window_2 = math.ceil(window * 0.75)  # 75% for medium phase
+        window_3 = window
+    
+    return window_1, window_2, window_3
+
+def compute_sessions_distribution(window, sessions_needed):
+    if window <= 3:
+        # Very short window - all sessions in one go
+        n_1 = sessions_needed
+        n_2 = sessions_needed
+        n_3 = sessions_needed
+    elif window <= 5:
+        # Short window - focus on last phase but still distribute
+        n_1 = max(1, math.ceil(sessions_needed * 0.5))  # At least 1 session early
+        n_2 = sessions_needed
+        n_3 = sessions_needed
+    elif window < 10:
+        # Medium window - 40% early, rest later
+        n_1 = max(1, math.ceil(sessions_needed * 0.4))
+        n_2 = sessions_needed
+        n_3 = sessions_needed
+    else:
+        # Longer window - proper distribution (35% early, 50% cumulative by window 2)
+        n_1 = max(1, math.ceil(sessions_needed * 0.35))
+        n_2 = max(n_1 + 1, math.ceil(sessions_needed * 0.75))  # Ensure n_2 > n_1
+        n_3 = sessions_needed
+    
+    return n_1, n_2, n_3'''
+
 
 def allocate(exam_or_task, session_pointer, number_of_sessions, number_of_days, day_pointer, schedule,is_exam=True):
     #window 1: allocate(exam, n, n_1, w1, day_pointer, schedule)
@@ -482,12 +652,12 @@ def allocate(exam_or_task, session_pointer, number_of_sessions, number_of_days, 
                 while (day_pointer2>=today):
                     if schedule.get(day_pointer2, 0) < sessions_per_day:
                         #add to db
-                        db.add_session_to_plan(username, day_pointer, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
+                        db.add_session_to_plan(username, day_pointer2, f"{exam_or_task[name]} - Session {session_pointer}", is_exam, exam_or_task['id'])
                         schedule[day_pointer2] = schedule.get(day_pointer2, 0) + 1
                         session_pointer-=1
                         break
                     day_pointer2 -= timedelta(days=1)
-                    
-
+                
             day_pointer -= timedelta(days=day_interval)
     return session_pointer,day_pointer,schedule
+

@@ -1,5 +1,6 @@
 import streamlit as st
 import db
+import pandas as pd
 
 def logIn():
     # Initialize session state for username if not set
@@ -42,7 +43,12 @@ def logIn():
                 st.error("Please fill all fields.")
 
 def loggedIn():
-    st.title("Welcome to :blue[AI Study Planner] 🤖")
+    col1,col2=st.columns([9,1])
+    with col1:
+        st.title("Welcome to :blue[AI Study Planner] 🤖")
+    with col2:
+        with st.popover("Guide", icon="💡"):
+            guide()
     st.info(f"Logged in as: {st.session_state['username']}")
     with st.expander("⚙️Manage User Preferences",expanded=True):
         set_user_pref()
@@ -50,6 +56,27 @@ def loggedIn():
         st.session_state["username"] = None
         st.success("Logging out...")
         st.rerun()
+
+def guide():
+    st.subheader("1. Manage user preferences")
+    with st.container(border=True):
+        st.write("Click on \"Save Preferences\" button after adjusting user preferences with the sliders")
+        st.image("images/account-save.png")
+    with st.container(border=True):
+        st.write("Here is a general guideline for \"How spread out would you like your sessions to be for each exam or task deadline?\"")
+        st.write("It affects how early on the AI study planner will start allocating you sessions for any study item")
+        spread_table = pd.DataFrame(
+            {
+                "Start preparing for an item approximately ___ days": [42,35,28,21,14]
+            },
+            index=["most spread out", "more spread out", "default", "less spread out", "least spread out"],
+        )
+        st.table(spread_table)
+
+    st.subheader("2. Logout")
+    with st.container(border=True):
+        st.write("Click on \"Logout\" button to logout of account")
+        st.image("images/account-logout.png")
 
 def set_user_pref():
     user_pref = db.get_user_pref(st.session_state["username"])
@@ -103,25 +130,25 @@ def set_user_pref():
                 st.success("Saved!")                
 
 def study_window_to_string(i):
-    if i==10:
+    if i==14:
         return "least spread out"
-    if i == 15:
+    if i == 21:
         return "less spread out"
-    elif i ==20: 
+    elif i ==28: 
         return "default" 
-    elif i==25:
+    elif i==35:
         return "more spread out"
     else:
         return "most spread out"
 
 def study_window_to_int(str):
     if str == "least spread out":
-        return 10
+        return 14
     elif str == "less spread out":
-        return 15
+        return 21
     elif str == "default":
-        return 20
+        return 28
     elif str == "more spread out":
-        return 25
+        return 35
     else:
-        return 30
+        return 42
