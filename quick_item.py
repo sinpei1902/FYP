@@ -4,7 +4,9 @@ import db
 from datetime import date, timedelta 
 
 def preview():
-    st.write("Complete study items to earn points and compete with friends!")
+    st.info("Please log in to use this feature.")
+    st.subheader("Complete items to earn points!")
+
     st.header("Preview")
     guide()
 

@@ -6,8 +6,9 @@ from datetime import date, timedelta, datetime
 #import account
 
 def preview():
-    st.write("You can generate a study plan based on your tasks and preferences here.")
-    st.write("Please log in to access the full planner features.")
+    st.info("Please log in to use this feature.")
+    st.subheader("Easily generate a study plan with :blue[AI Study Planner]")
+
     st.header("Preview")
     guide()
 
@@ -130,23 +131,32 @@ def guide():
 def display_overdue(username,start):
     today = date.today()
     all_days = pd.date_range(start, today - timedelta(days=1), freq="D")
-    with st.container(border=True):
-        st.subheader("⚠️ Overdue Study Items ⚠️")
-        st.write(f"Your study plan contains items scheduled before today ({today}). Please complete the sessions, edit study items, or regenerate a new study plan.")
-        col1, col2 = st.columns([1,3])
-        with col1:
-            st.subheader("Assigned Date")
-        with col2:
-            st.subheader("Session")
-        for d in all_days:
+    have_overdue = 0
+    for d in all_days:
             sessions = db.get_sessions(username,d)
             if sessions:
                 for session in sessions:
-                    if not session.startswith("☑️"):
-                        with col1:
-                            st.write(d.strftime("%d %b"))
-                        with col2:
-                            st.write(session)
+                    if session.startswith("☑️"):
+                        have_overdue=1
+                        break
+    if have_overdue:                
+        with st.container(border=True):
+            st.subheader("⚠️ Overdue Study Items ⚠️")
+            st.write(f"Your study plan contains items scheduled before today ({today}). Please complete the sessions, edit study items, or regenerate a new study plan.")
+            col1, col2 = st.columns([1,3])
+            with col1:
+                st.subheader("Assigned Date")
+            with col2:
+                st.subheader("Session")
+            for d in all_days:
+                sessions = db.get_sessions(username,d)
+                if sessions:
+                    for session in sessions:
+                        if not session.startswith("☑️"):
+                            with col1:
+                                st.write(d.strftime("%d %b"))
+                            with col2:
+                                st.write(session)
 
 def display_plan(username):
     tab1, tab2 = st.tabs(["Calendar View", "View by Study Items"])

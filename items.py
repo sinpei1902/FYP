@@ -4,10 +4,9 @@ import db
 from datetime import time, datetime, timedelta
 
 def preview():
-    st.title("Study Item Management")
-    st.write("This is a preview of the study items management feature.")
-    st.write("You can add, view, and delete items here.")
-    st.write("Please log in to manage your study items.")
+    st.info("Please log in to use this feature.")
+    st.subheader("Manage your exams and tasks here!")
+
     st.header("Preview")
     guide()
 

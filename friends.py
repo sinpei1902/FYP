@@ -2,7 +2,9 @@ import streamlit as st
 import db
 
 def preview():
-    st.write("Add your friends here!")
+    st.info("Please log in to use this feature.")
+    st.subheader("Add your friends to compete with them!")
+    
     st.header("Preview")
     guide()
 
