@@ -131,13 +131,13 @@ def guide():
 def display_overdue(username,start):
     today = date.today()
     all_days = pd.date_range(start, today - timedelta(days=1), freq="D")
-    have_overdue = 0
+    have_overdue = False
     for d in all_days:
             sessions = db.get_sessions(username,d)
             if sessions:
                 for session in sessions:
-                    if session.startswith("☑️"):
-                        have_overdue=1
+                    if not session.startswith("☑️"):
+                        have_overdue=True
                         break
     if have_overdue:                
         with st.container(border=True):
@@ -290,7 +290,7 @@ def display_calendar(username):
                     st.empty()
                 else:
                     #bg_color = "#f8f9fa"
-                    st.text_area(d, value=sessions, disabled=True, key=d)
+                    st.text_area(d, value=sessions, disabled=True)
 
 def generate_study_plan(username, study_window=20):
     if db.check_study_plan_exists(username):
@@ -306,11 +306,8 @@ def generate_study_plan(username, study_window=20):
     today = date.today()
     earliest_due_date = today + timedelta(days=study_window)  # anything earlier would require a shorter study window
 
-    # computations on study window (default 20 days) 
+    # computations on study window (default 28 days) 
     window_1, window_2, window_3 = compute_study_windows(study_window)
-    # window 1: (default 4 days ~30% of workload ~7.5%/day)
-    # window 2: (defaults 14 days ~50% of workload ~5%/day)
-    # window 3: (default 20 days ~20% of workload ~3.3%/day)
     
     user_pref = db.get_user_pref(username)
     hours_per_session = float(user_pref["preferred_hours_per_session"])
@@ -408,53 +405,6 @@ def generate_study_plan(username, study_window=20):
         elif (day_pointer<end_w3): # day_pointer before end_w3, after or on start_w3
             number_of_days = (day_pointer - start_w3).days + 1
         n,day_pointer,schedule = allocate(exam, n, n, number_of_days, day_pointer, schedule)
-
-
-
-    '''for exam in exams:
-        sessions_needed = math.ceil(exam["hours_needed"] / hours_per_session)
-        
-        exam_date = pd.to_datetime(exam["exam_date"]).date()
-        if exam_date < earliest_due_date:
-            w1,w2,w3 = compute_study_windows((exam_date - today).days)
-        else: #default
-            w1,w2,w3 = window_1,window_2,window_3
-        #scheduled start and end days for each window
-        #end_w1 = exam_date - timedelta(days=1)
-        #start_w1 = exam_date - timedelta(days=w1)
-        end_w2 = max(today,exam_date - timedelta(days=w1+1))
-        start_w2 = max(today,exam_date - timedelta(days=w2))
-        end_w3 = max(today,exam_date - timedelta(days=w2+1))
-        start_w3 = max(today,exam_date - timedelta(days=w3))
-
-        day_pointer = exam_date - timedelta(days=1) #start from day before exam
-
-        #allocate from the back
-        n = sessions_needed #pointer (start from last session)
-        n_1,n_2,n_3 = compute_sessions_distribution((exam_date - today).days,sessions_needed)
-
-        #allocate(exam, session_pointer, number_of_sessions, number_of_days, day_pointer, schedule)
-        #allocate sessions in window 1
-        number_of_days = w1
-        n,day_pointer,schedule = allocate(exam, n, n_1, number_of_days, day_pointer, schedule)
-        #allocate sessions in window 2
-        number_of_days = w2 - w1
-        if (day_pointer>end_w2):
-            day_pointer = end_w2
-        elif (day_pointer<start_w2):
-            number_of_days = 1 #at least 1
-        elif (day_pointer<end_w2): # day_pointer before end_w2, after or on start_w2
-            number_of_days = (day_pointer - start_w2).days + 1
-        n,day_pointer,schedule = allocate(exam, n, n_2 - n_1, number_of_days, day_pointer, schedule)
-        #allocate sessions in window 3
-        number_of_days = w3-w2
-        if (day_pointer>end_w3):
-            day_pointer = end_w3
-        elif (day_pointer<start_w3):
-            number_of_days = 1 #at least 1
-        elif (day_pointer<end_w3): # day_pointer before end_w3, after or on start_w3
-            number_of_days = (day_pointer - start_w3).days + 1
-        n,day_pointer,schedule = allocate(exam, n, n, number_of_days, day_pointer, schedule)'''
     
     #allocate sessions for tasks
     tasks = sorted(tasks, key=lambda x: pd.to_datetime(x["due_date"]).date())
@@ -509,29 +459,24 @@ def generate_study_plan(username, study_window=20):
 
 
 def compute_study_windows(window):
-    # window 1: (default 5 days ~35% of workload ~7%/day)
-    #window_1 = math.ceil(window * 4 / 20)
-    # window 2: (defaults 15 days ~50% of workload ~5%/day)
-    #window_2 = math.ceil(window * 14 / 20)
-    # ensure window_1 + window_2 < window
-    # window 3: (default 20 days ~20% of workload ~4%/day)
+    # window 1: (default 7 days ~30% of workload ~%/day)
+    # window 2: (defaults 21 days ~50% of workload ~%/day)
+    # window 3: (default 28 days ~20% of workload ~%/day)
 
-    # window 1: (default 5 days ~45% of workload ~9%/day)
-    #window_1 = math.ceil(window * 5 / 20)
-    # window 2: (defaults 15 days ~40% of workload ~4%/day)
-    #window_2 = math.ceil(window * 15 / 20)
-    # ensure window_1 + window_2 < window
-    # window 3: (default 20 days ~15% of workload ~3%/day)
+    # window 1: (default 7 days ~30% of workload ~%/day)
+    # window 2: (defaults 14 days ~25% of workload ~%/day)
+    # window 3: (default 28 days ~45% of workload ~%/day)
+
 
     if window<5:
         window_1 = window
         window_2 = window
     else:
-        window_1 = math.ceil(window * 5 / 20)
+        window_1 = math.ceil(window * 7 / 28)
         if window<10:
             window_2 = window
         else:
-            window_2 = math.ceil(window * 15 / 20)
+            window_2 = min(math.ceil(window * 14 / 28),window)
     window_3 = window
     return window_1, window_2, window_3
 
@@ -541,11 +486,11 @@ def compute_sessions_distribution(window,sessions_needed):
         n_2 = sessions_needed
         n_3 = sessions_needed
     else:
-        n_1 = math.ceil(sessions_needed*0.45)
+        n_1 = math.ceil(sessions_needed*0.3)
         if window<10:
             n_2 = sessions_needed
         else:
-            n_2 = math.ceil(sessions_needed*0.85)
+            n_2 = math.ceil(sessions_needed*0.55)
         n_3 = sessions_needed
     return n_1,n_2,n_3
 '''
