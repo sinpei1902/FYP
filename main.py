@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import db, home, account, items, planner, quick_item, friends
+import db, home, account, items, planner, quick_item, friends, quotes
 
 st.set_page_config(page_title='AI Study Planner', page_icon='🖼️', layout='wide')
 
@@ -39,19 +39,23 @@ class MultiApp:
                 }
             )
         if app == 'Home':
+            quotes.display()
             home.app()
         if app == account_label:
             if "username" in st.session_state and st.session_state["username"]:
+                quotes.display()
                 account.loggedIn()  
             else:
                 account.logIn() 
         if app == 'Study Items':
             if "username" in st.session_state and st.session_state["username"]:
+                quotes.display()
                 items.app()  
             else:
                 items.preview()
         if app == 'Generate Planner':
             if "username" in st.session_state and st.session_state["username"]:
+                quotes.display()
                 planner.app()  
             else:
                 planner.preview()
@@ -62,11 +66,13 @@ class MultiApp:
         #        chat.preview()
         if app == 'Complete an Item':
             if "username" in st.session_state and st.session_state["username"]:
+                quotes.display()
                 quick_item.app()  
             else:
                 quick_item.preview()
         if app == 'Friends':
             if "username" in st.session_state and st.session_state["username"]:
+                quotes.display()
                 friends.app()  
             else:
                 friends.preview()

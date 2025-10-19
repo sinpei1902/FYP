@@ -141,7 +141,7 @@ def display_overdue(username,start):
                         break
     if have_overdue:                
         with st.container(border=True):
-            st.subheader("⚠️ Overdue Study Items ⚠️")
+            st.subheader("⚠️ Overdue Study Sessions ⚠️")
             st.write(f"Your study plan contains items scheduled before today ({today}). Please complete the sessions, edit study items, or regenerate a new study plan.")
             col1, col2 = st.columns([1,3])
             with col1:
@@ -459,13 +459,9 @@ def generate_study_plan(username, study_window=20):
 
 
 def compute_study_windows(window):
-    # window 1: (default 7 days ~30% of workload ~%/day)
-    # window 2: (defaults 21 days ~50% of workload ~%/day)
-    # window 3: (default 28 days ~20% of workload ~%/day)
-
-    # window 1: (default 7 days ~30% of workload ~%/day)
-    # window 2: (defaults 14 days ~25% of workload ~%/day)
-    # window 3: (default 28 days ~45% of workload ~%/day)
+    # window 1: (default 7 days ~30% of workload ~4.3%/day)
+    # window 2: (defaults 14 days ~25% of workload ~3.6%/day)
+    # window 3: (default 28 days ~45% of workload ~3.2%/day)
 
 
     if window<5:
