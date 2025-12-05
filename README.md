@@ -3,4 +3,5 @@
 ##### The url, http://aistudyplannerfyp.streamlit.app, works by connecting to my GitHub Repo on then Streamlit Development Site
 
 ##### The app can also run locally by running this in the terminal: 
+pip install -r requirements.txt
 streamlit run main.py
